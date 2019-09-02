@@ -17,7 +17,7 @@ class Snake:
         return [self.pos[0][0] * pixel_size, self.pos[0][1] * pixel_size]
     def move(self):
         if self.direction == Direction.RIGHT:
-            new_head = self.pos[0][:] #without [:] would assign reference to list
+            new_head = self.pos[0][:] #without [:] would assign reference to list, not it's copy
             new_head[0] += 1
         if self.direction == Direction.LEFT:
             new_head = self.pos[0][:]
@@ -33,12 +33,13 @@ class Snake:
             self.need_new_tail = False
         else:
             self.pos = [new_head] + self.pos[:-1]
-    def self_collision(self):
+    def if_self_collision(self): #not sure about the name
         if self.pos[0] in self.pos[1:]:
             print('self collision')
             return True
         return False
     def change_direction(self, direction):
+        #check if valid value
         self.direction = direction
     def add_tail(self):
         self.need_new_tail = True
@@ -88,21 +89,7 @@ class Display:
         self.clean_scoreboard()
         self.display.blit(text_surface, (10, -40))
         pygame.display.update()
-    def check_edge_collision(self, snake): #warunki bleh (nieczytelne) #move to game
-        if snake.get_head_screen_coords(self.pixel_size)[0] < self.get_left_playfield_border():
-            print('left edge collision')
-            return True
-        if snake.get_head_screen_coords(self.pixel_size)[0] + self.pixel_size > self.get_right_playfield_border():
-            print('right edge collision')
-            return True
-        if snake.get_head_screen_coords(self.pixel_size)[1] + self.pixel_size > self.get_lower_playfield_border():    
-            print('bottom edge collision')
-            return True
-        if snake.get_head_screen_coords(self.pixel_size)[1] < self.get_upper_playfield_border():
-            print('top edge collision')
-            return True
-        return False
-
+    
 class Game:
     def __init__(self, board_size, pixel_size, delay):
         self.disp = Display(board_size, board_size, pixel_size)
@@ -131,19 +118,16 @@ class Game:
             self.handle_events()
             if not self.pause:
                 self.snake.move()
-            self.game_over = self.check_collision()
+                self.apply_move_effcts()
             self.disp.update(self.snake, list(self.papu), self.game_over, self.pause, self.point_count)
         print('GAME OVER')   
         print('POINTS: ', self.point_count)
-    def check_collision(self): #moze apply_move_effects (i wpisywac dane ze kolizja albo ze zjadlo jedzonko)
-        if self.disp.check_edge_collision(self.snake):
-            return True
-        if self.snake.self_collision():
-            return True
-        if self.check_papu_collision(): #SIDE EFFECT?
+    def apply_move_effcts(self):
+        if self.if_edge_collision() or self.snake.if_self_collision():
+            self.game_over = True
+        elif self.if_papu_eaten():
             self.snake.add_tail()
             self.point_count += 1
-        return False
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -172,10 +156,9 @@ class Game:
             self.pause_locked = False
     def lock_pause(self):
         self.pause_locked = True
-    #PODEBRANE Z BOARD, DO POPRAWKI
-    def check_papu_collision(self):
+    def if_papu_eaten(self):
         if self.papu == self.snake.get_head_screen_coords(self.pixel_size):
-            print('papu collision')
+            print('papu eaten')
             self.new_papu(self.snake)
             return True
         return False
@@ -187,6 +170,24 @@ class Game:
             new_papu(self, snake)
         else:
             self.papu = new_papu_coords #moze zamiast w funkcji przypisywac funkcja powinna zwracac?
+    def if_edge_collision(self): #not sure about the name
+        snake_head_left_x, snake_head_top_y = self.snake.get_head_screen_coords(self.pixel_size)
+        snake_head_right_x = snake_head_left_x + self.pixel_size
+        snake_head_bottom_y = snake_head_top_y + self.pixel_size
+        if snake_head_left_x < self.disp.get_left_playfield_border():
+            print('left edge collision')
+            return True
+        if snake_head_right_x > self.disp.get_right_playfield_border():
+            print('right edge collision')
+            return True
+        if snake_head_top_y < self.disp.get_upper_playfield_border():
+            print('top edge collision')
+            return True
+        if snake_head_bottom_y > self.disp.get_lower_playfield_border():    
+            print('bottom edge collision')
+            return True
+        return False
+
 
 class Button:
     def __init__(self):
