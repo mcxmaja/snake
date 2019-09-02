@@ -53,12 +53,12 @@ class Snake:
         self.need_new_tail = True
         
 class Display:
-    def __init__(self, width, height, boarder_width, pixel_size, colors):
+    def __init__(self, width, height, border_width, pixel_size, colors):
         self.scoreboard_height = 80
         self.inner_width = width
         self.inner_height = height
         self.pixel_size = pixel_size
-        self.border_width = boarder_width
+        self.border_width = border_width
         self.background_color = colors[0]
         self.border_color = colors[1]
         self.display = pygame.display.set_mode(self.get_window_size())
@@ -71,14 +71,6 @@ class Display:
         return [self.inner_width + 2 * self.border_width, self.inner_height + self.scoreboard_height + self.border_width]
     def get_playfield_size(self):
         return [self.inner_width, self.inner_height]
-    def get_left_playfield_border(self):
-        return self.border_width
-    def get_right_playfield_border(self):
-        return self.inner_width + self.border_width
-    def get_upper_playfield_border(self):
-        return self.scoreboard_height
-    def get_lower_playfield_border(self):
-        return self.scoreboard_height + self.inner_height
     def get_center(self):
         return [self.inner_width / 2, self.inner_height / 2]
     def update(self, snake, papu_coords, game_over, pause, points):
@@ -92,11 +84,17 @@ class Display:
             snake_rects = [coords + [self.pixel_size, self.pixel_size] for coords in snake.get_screen_coords(self.pixel_size)]            
             for pixel in snake_rects:
                 pygame.draw.rect(self.display, white, pixel)
-            pygame.draw.rect(self.display, red, papu_coords + [self.pixel_size, self.pixel_size])
+            pygame.draw.rect(self.display, (0,0,255), papu_coords + [self.pixel_size, self.pixel_size])
             text_surface = self.font.render(str(points), False, white)
         self.clean_scoreboard()
-        self.display.blit(text_surface, (self.boarder_width, -40))
+        self.display.blit(text_surface, (self.border_width, -40))
         pygame.display.update()
+    def move_x_to_inner_field(self, x_coord):
+        return x_coord + self.border_width
+    def move_y_to_inner_field(self, y_coord):
+        return y_coord + self.scoreboard_height
+    def move_to_inner_field(self, coords):
+        return [move_x_to_inner_field(coords[0]), move_y_to_inner_field(coords[1])]
     
 class Game:
     def __init__(self, board_size, pixel_size, delay):
@@ -108,14 +106,8 @@ class Game:
         self.point_count = 0
         self.papu = [300.0,300.0]
         self.board_size = board_size
-        self.scoreboard_height = 70 #to samo w display
-        self.border_width = 10 #to samo w display
         self.inner_width = board_size #to samo w display
         self.inner_height = board_size #to samo w display
-        self.left_boundry = self.border_width
-        self.right_boundry = self.border_width + self.inner_width
-        self.upper_boundry = self.scoreboard_height
-        self.lower_boundry = self.scoreboard_height + self.inner_height
         self.pause = False
         self.pause_locked = True
         self.pixel_size = pixel_size
@@ -173,25 +165,26 @@ class Game:
     def new_papu(self, snake):
         num_of_pixels_width = self.board_size / pixel_size
         num_of_pixels_height = self.board_size / pixel_size
-        new_papu_coords = [self.left_boundry + random.randint(0, num_of_pixels_width - 1) * pixel_size, self.upper_boundry + random.randint(0, num_of_pixels_height - 1) * pixel_size]
+        new_papu_coords = [self.disp.move_x_to_inner_field(0) + random.randint(0, num_of_pixels_width - 1) * pixel_size, self.disp.move_y_to_inner_field(0) + random.randint(0, num_of_pixels_height - 1) * pixel_size]
         if snake is not None and new_papu_coords in snake.get_screen_coords(self.pixel_size):
-            new_papu(self, snake)
+            self.new_papu(snake)
         else:
             self.papu = new_papu_coords #moze zamiast w funkcji przypisywac funkcja powinna zwracac?
+        print('papu: ', self.papu)
     def if_edge_collision(self): #not sure about the name
         snake_head_left_x, snake_head_top_y = self.snake.get_head_screen_coords(self.pixel_size)
         snake_head_right_x = snake_head_left_x + self.pixel_size
         snake_head_bottom_y = snake_head_top_y + self.pixel_size
-        if snake_head_left_x < self.disp.get_left_playfield_border():
+        if snake_head_left_x < self.disp.move_x_to_inner_field(0):
             print('left edge collision')
             return True
-        if snake_head_right_x > self.disp.get_right_playfield_border():
+        if snake_head_right_x > self.disp.move_x_to_inner_field(self.inner_width):
             print('right edge collision')
             return True
-        if snake_head_top_y < self.disp.get_upper_playfield_border():
+        if snake_head_top_y < self.disp.move_y_to_inner_field(0):
             print('top edge collision')
             return True
-        if snake_head_bottom_y > self.disp.get_lower_playfield_border():    
+        if snake_head_bottom_y > self.disp.move_y_to_inner_field(self.inner_height):    
             print('bottom edge collision')
             return True
         return False
@@ -215,7 +208,7 @@ black = (0,0,0)
 white = (255, 255, 255)
 red = (255, 0, 0)
 
-board_size = 560
+board_size = 500
 pixel_size = 10
 
 time_delay = 50
