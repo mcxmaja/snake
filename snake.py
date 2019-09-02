@@ -7,27 +7,23 @@ class Direction(Enum):
     DOWN = 4
 
 class Snake:
-    def __init__(self, coords, size):
-        self.pos = [coords]
-        self.size = size
+    def __init__(self, pixel_size_coords, size):
+        self.pos = [pixel_size_coords]
         self.direction = Direction.RIGHT
         self.need_new_tail = False
-    def get_rects(self):
-        rects_list = []
-        for chunk in self.pos:
-            rects_list.append(list(chunk) + [self.size, self.size])
-        return rects_list
-    def get_head_coords(self):
-        return self.pos[0]
+    def get_screen_coords(self, pixel_size):
+        return [[coords[0] * pixel_size, coords[1] * pixel_size] for coords in self.pos]
+    def get_head_screen_coords(self, pixel_size):
+        return [self.pos[0][0] * pixel_size, self.pos[0][1] * pixel_size]
     def move(self):
         if self.direction == Direction.RIGHT:
-            new_head = self.pos[0][0] + self.size, self.pos[0][1]
+            new_head = self.pos[0][0] + 1, self.pos[0][1]
         if self.direction == Direction.LEFT:
-            new_head = (self.pos[0][0] - self.size, self.pos[0][1])
+            new_head = (self.pos[0][0] - 1, self.pos[0][1])
         if self.direction == Direction.UP:
-            new_head = (self.pos[0][0], self.pos[0][1] - self.size)
+            new_head = (self.pos[0][0], self.pos[0][1] - 1)
         if self.direction == Direction.DOWN:
-            new_head = (self.pos[0][0], self.pos[0][1] + self.size)
+            new_head = (self.pos[0][0], self.pos[0][1] + 1)
         if self.need_new_tail:
             self.pos = [new_head] + self.pos
             self.need_new_tail = False
@@ -42,8 +38,6 @@ class Snake:
         self.direction = direction
     def add_tail(self):
         self.need_new_tail = True
-    def game_over_detection():
-        pass
         
 class Display:
     def __init__(self, width, height, pixel_size):
@@ -82,37 +76,38 @@ class Display:
         else:
             self.display.fill(self.border_color)
             pygame.draw.rect(self.display, self.background_color, [self.border_width, self.scoreboard_height] + self.get_playfield_size())
-            for chunk in snake.get_rects():
-                pygame.draw.rect(self.display, white, chunk)
+            snake_rects = [coords + [self.pixel_size, self.pixel_size] for coords in snake.get_screen_coords(self.pixel_size)]            
+            for pixel in snake_rects:
+                pygame.draw.rect(self.display, white, pixel)
             pygame.draw.rect(self.display, red, papu_coords + [self.pixel_size, self.pixel_size])
             text_surface = self.font.render(str(points), False, white)
         self.clean_scoreboard()
         self.display.blit(text_surface, (10, -40))
         pygame.display.update()
     def check_edge_collision(self, snake): #warunki bleh (nieczytelne) #move to game
-        if snake.get_head_coords()[0] < self.get_left_playfield_border():
-            print('border hit! coords:' + str(snake.get_head_coords()))
+        if snake.get_head_screen_coords(self.pixel_size)[0] < self.get_left_playfield_border():
+            print('left edge collision')
             return True
-        if snake.get_head_coords()[0] + self.pixel_size > self.get_right_playfield_border():
-            print('border hit! coords:' + str(snake.get_head_coords()))
+        if snake.get_head_screen_coords(self.pixel_size)[0] + self.pixel_size > self.get_right_playfield_border():
+            print('right edge collision')
             return True
-        if snake.get_head_coords()[1] + self.pixel_size > self.get_lower_playfield_border():    
-            print('border hit! coords:' + str(snake.get_head_coords()))
+        if snake.get_head_screen_coords(self.pixel_size)[1] + self.pixel_size > self.get_lower_playfield_border():    
+            print('bottom edge collision')
             return True
-        if snake.get_head_coords()[1] < self.get_upper_playfield_border():
-            print('border hit! coords:' + str(snake.get_head_coords()))
+        if snake.get_head_screen_coords(self.pixel_size)[1] < self.get_upper_playfield_border():
+            print('top edge collision')
             return True
         return False
 
 class Game:
     def __init__(self, board_size, pixel_size, delay):
         self.disp = Display(board_size, board_size, pixel_size)
-        self.snake = Snake(self.disp.get_center(), pixel_size)
+        self.snake = Snake([self.disp.get_center()[0] / pixel_size, self.disp.get_center()[1] / pixel_size], pixel_size)
         self.clock = pygame.time.Clock()
         self.delay = delay
         self.game_over = False
         self.point_count = 0
-        self.papu = (300.0,300.0)
+        self.papu = [300.0,300.0]
         self.board_size = board_size
         self.scoreboard_height = 70 #to samo w display
         self.border_width = 10 #to samo w display
@@ -124,6 +119,7 @@ class Game:
         self.lower_boundry = self.scoreboard_height + self.inner_height
         self.pause = False
         self.pause_locked = True
+        self.pixel_size = pixel_size
     def start(self):
         while not self.game_over:
             pygame.time.delay(self.delay)
@@ -135,7 +131,7 @@ class Game:
             self.disp.update(self.snake, list(self.papu), self.game_over, self.pause, self.point_count)
         print('GAME OVER')   
         print('POINTS: ', self.point_count)
-    def check_collision(self):
+    def check_collision(self): #moze apply_move_effects (i wpisywac dane ze kolizja albo ze zjadlo jedzonko)
         if self.disp.check_edge_collision(self.snake):
             return True
         if self.snake.self_collision():
@@ -174,15 +170,18 @@ class Game:
         self.pause_locked = True
     #PODEBRANE Z BOARD, DO POPRAWKI
     def check_papu_collision(self):
-        if self.papu == self.snake.pos[0]:
+        print('checking papu collision')
+        print('papu: ', self.papu)
+        print('head: ', self.snake.get_head_screen_coords(self.pixel_size))
+        if self.papu == self.snake.get_head_screen_coords(self.pixel_size):
             self.new_papu(self.snake)
             return True
         return False
     def new_papu(self, snake):
         num_of_pixels_width = self.board_size / pixel_size
         num_of_pixels_height = self.board_size / pixel_size
-        new_papu_coords = (self.left_boundry + random.randint(0, num_of_pixels_width - 1) * pixel_size, self.upper_boundry + random.randint(0, num_of_pixels_height - 1) * pixel_size)
-        if snake is not None and new_papu_coords in snake.pos:
+        new_papu_coords = [self.left_boundry + random.randint(0, num_of_pixels_width - 1) * pixel_size, self.upper_boundry + random.randint(0, num_of_pixels_height - 1) * pixel_size]
+        if snake is not None and new_papu_coords in snake.get_screen_coords(self.pixel_size):
             new_papu(self, snake)
         else:
             self.papu = new_papu_coords #moze zamiast w funkcji przypisywac funkcja powinna zwracac?
