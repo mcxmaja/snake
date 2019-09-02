@@ -47,7 +47,7 @@ class Snake:
         
 class Display:
     def __init__(self, width, height, pixel_size):
-        self.scoreboard_height = 70
+        self.scoreboard_height = 80
         self.border_width = 10
         self.inner_width = width
         self.inner_height = height
@@ -55,7 +55,11 @@ class Display:
         self.display = pygame.display.set_mode(self.get_window_size())
         self.background_color = black
         self.border_color = red
-        self.game_over = False
+        self.font = pygame.font.Font('./Pixeled.ttf', 50)
+        self.game_over_surface = self.font.render('GAME OVER', False, white)
+        self.pause_surface = self.font.render('PAUSE', False, white)
+    def clean_scoreboard(self):
+        pygame.draw.rect(self.display, self.border_color, [self.border_width, 0] + [self.inner_width, self.scoreboard_height])
     def get_window_size(self):
         return [self.inner_width + 2 * self.border_width, self.inner_height + self.scoreboard_height + self.border_width]
     def get_playfield_size(self):
@@ -70,23 +74,22 @@ class Display:
         return self.scoreboard_height + self.inner_height
     def get_center(self):
         return [self.inner_width / 2, self.inner_height / 2]
-    def update(self, snake, papu_coords, pause, points):
-        self.display.fill(self.border_color)
-        pygame.draw.rect(self.display, self.background_color, [self.border_width, self.scoreboard_height] + self.get_playfield_size())
-        for chunk in snake.get_rects():
-            pygame.draw.rect(self.display, white, chunk)
-        pygame.draw.rect(self.display, red, papu_coords + [self.pixel_size, self.pixel_size])
-        if pause:
-            for pixel in [[x, y, w, h] for [x, y, w, h] in self.get_pause_rects()]: #bleh
-                pygame.draw.rect(self.display, white, pixel)
-        if self.game_over:
-            for pixel in [[x, y, w, h] for [x, y, w, h] in self.get_game_over_rects()]: #bleh
-                pygame.draw.rect(self.display, white, pixel)
-        myfont = pygame.font.Font('./Pixeled.ttf', 70)
-        textsurface = myfont.render(str(points), False, (255, 255, 255))
-        self.display.blit(textsurface,(0,0))
+    def update(self, snake, papu_coords, game_over, pause, points):
+        if game_over:
+            text_surface = self.game_over_surface
+        elif pause:
+            text_surface = self.pause_surface
+        else:
+            self.display.fill(self.border_color)
+            pygame.draw.rect(self.display, self.background_color, [self.border_width, self.scoreboard_height] + self.get_playfield_size())
+            for chunk in snake.get_rects():
+                pygame.draw.rect(self.display, white, chunk)
+            pygame.draw.rect(self.display, red, papu_coords + [self.pixel_size, self.pixel_size])
+            text_surface = self.font.render(str(points), False, white)
+        self.clean_scoreboard()
+        self.display.blit(text_surface, (10, -40))
         pygame.display.update()
-    def check_edge_collision(self, snake): #warunki bleh (nieczytelne) 
+    def check_edge_collision(self, snake): #warunki bleh (nieczytelne) #move to game
         if snake.get_head_coords()[0] < self.get_left_playfield_border():
             print('border hit! coords:' + str(snake.get_head_coords()))
             return True
@@ -100,30 +103,6 @@ class Display:
             print('border hit! coords:' + str(snake.get_head_coords()))
             return True
         return False
-    def get_pause_rects(self):
-        pause_coords = [(1,1),(2,1),(3,1),    (6,1),(7,1),(8,1),    (11,1),       (13,1),    (16,1),(17,1),(18,1),    (21,1),(22,1),(23,1),
-                        (1,2),      (3,2),    (6,2),      (8,2),    (11,2),       (13,2),    (16,2),                  (21,2),
-                        (1,3),(2,3),(3,3),    (6,3),(7,3),(8,3),    (11,3),       (13,3),    (16,3),(17,3),(18,3),    (21,3),(22,3),
-                        (1,4),                (6,4),      (8,4),    (11,4),       (13,4),                  (18,4),    (21,4),
-                        (1,5),                (6,5),      (8,5),    (11,5),(12,5),(13,5),    (16,5),(17,5),(18,5),    (21,5),(22,5),(23,5)]
-        pause_rects = [[x * 10, y * 10, self.pixel_size, self.pixel_size] for (x, y) in pause_coords]
-        return pause_rects
-    def get_game_over_rects(self):
-        game_coords = [(1,1),(2,1),(3,1),(4,1),(5,1),    (8,1),(9,1),(10,1),(11,1),(12,1),    (15,1),                     (19,1),    (22,1),(23,1),(24,1),(25,1),(26,1),
-                       (1,2),                            (8,2),                    (12,2),    (15,2),(16,2),       (18,2),(19,2),    (22,2),
-                       (1,3),            (4,3),(5,3),    (8,3),(9,3),(10,3),(11,3),(12,3),    (15,3),       (17,3),       (19,3),    (22,3),(23,3),(24,3),(25,3),
-                       (1,4),                  (5,4),    (8,4),                    (12,4),    (15,4),                     (19,4),    (22,4),
-                       (1,5),(2,5),(3,5),(4,5),(5,5),    (8,5),                    (12,5),    (15,5),                     (19,5),    (22,5),(23,5),(24,5),(25,5),(26,5)]
-
-        over_coords = [(1,1),(2,1),(3,1),(4,1),(5,1),    (8,1),                    (12,1),    (15,1),(16,1),(17,1),(18,1),(19,1),    (22,1),(23,1),(24,1),(25,1),(26,1),
-                       (1,2),                  (5,2),    (8,2),                    (12,2),    (15,2),                                (22,2),                     (26,2),
-                       (1,3),                  (5,3),    (8,3),(9,3),       (11,3),(12,3),    (15,3),(16,3),(17,3),(18,3),           (22,3),(23,3),(24,3),(25,3),(26,3),
-                       (1,4),                  (5,4),          (9,4),(10,4),(11,4),           (15,4),                                (22,4),       (24,4),
-                       (1,5),(2,5),(3,5),(4,5),(5,5),                (10,5),                  (15,5),(16,5),(17,5),(18,5),(19,5),    (22,5),              (25,5)]
-
-        game_over_rects = [[x * 10, y * 10, self.pixel_size, self.pixel_size] for (x, y) in game_coords] + [[x * 10 + 300, y * 10, self.pixel_size, self.pixel_size] for (x, y) in over_coords]
-        return game_over_rects
-        
 
 class Game:
     def __init__(self, board_size, pixel_size, delay):
@@ -153,10 +132,7 @@ class Game:
             if not self.pause:
                 self.snake.move()
             self.game_over = self.check_collision()
-            if self.game_over:
-                self.disp.game_over = True
-            else:
-                self.disp.update(self.snake, list(self.papu), self.pause, self.point_count)
+            self.disp.update(self.snake, list(self.papu), self.game_over, self.pause, self.point_count)
         print('GAME OVER')   
         print('POINTS: ', self.point_count)
     def check_collision(self):
