@@ -17,13 +17,17 @@ class Snake:
         return [self.pos[0][0] * pixel_size, self.pos[0][1] * pixel_size]
     def move(self):
         if self.direction == Direction.RIGHT:
-            new_head = self.pos[0][0] + 1, self.pos[0][1]
+            new_head = self.pos[0][:] #without [:] would assign reference to list
+            new_head[0] += 1
         if self.direction == Direction.LEFT:
-            new_head = (self.pos[0][0] - 1, self.pos[0][1])
-        if self.direction == Direction.UP:
-            new_head = (self.pos[0][0], self.pos[0][1] - 1)
+            new_head = self.pos[0][:]
+            new_head[0] -= 1
         if self.direction == Direction.DOWN:
-            new_head = (self.pos[0][0], self.pos[0][1] + 1)
+            new_head = self.pos[0][:]
+            new_head[1] += 1
+        if self.direction == Direction.UP:
+            new_head = self.pos[0][:]
+            new_head[1] -= 1
         if self.need_new_tail:
             self.pos = [new_head] + self.pos
             self.need_new_tail = False
@@ -170,10 +174,8 @@ class Game:
         self.pause_locked = True
     #PODEBRANE Z BOARD, DO POPRAWKI
     def check_papu_collision(self):
-        print('checking papu collision')
-        print('papu: ', self.papu)
-        print('head: ', self.snake.get_head_screen_coords(self.pixel_size))
         if self.papu == self.snake.get_head_screen_coords(self.pixel_size):
+            print('papu collision')
             self.new_papu(self.snake)
             return True
         return False
