@@ -45,15 +45,15 @@ class Snake:
         self.need_new_tail = True
         
 class Display:
-    def __init__(self, width, height, pixel_size):
+    def __init__(self, width, height, boarder_width, pixel_size, colors):
         self.scoreboard_height = 80
-        self.border_width = 10
         self.inner_width = width
         self.inner_height = height
         self.pixel_size = pixel_size
+        self.border_width = boarder_width
+        self.background_color = colors[0]
+        self.border_color = colors[1]
         self.display = pygame.display.set_mode(self.get_window_size())
-        self.background_color = black
-        self.border_color = red
         self.font = pygame.font.Font('./Pixeled.ttf', 50)
         self.game_over_surface = self.font.render('GAME OVER', False, white)
         self.pause_surface = self.font.render('PAUSE', False, white)
@@ -87,12 +87,12 @@ class Display:
             pygame.draw.rect(self.display, red, papu_coords + [self.pixel_size, self.pixel_size])
             text_surface = self.font.render(str(points), False, white)
         self.clean_scoreboard()
-        self.display.blit(text_surface, (10, -40))
+        self.display.blit(text_surface, (self.boarder_width, -40))
         pygame.display.update()
     
 class Game:
     def __init__(self, board_size, pixel_size, delay):
-        self.disp = Display(board_size, board_size, pixel_size)
+        self.disp = Display(board_size, board_size, pixel_size, pixel_size, [black, red])
         self.snake = Snake([self.disp.get_center()[0] / pixel_size, self.disp.get_center()[1] / pixel_size], pixel_size)
         self.clock = pygame.time.Clock()
         self.delay = delay
