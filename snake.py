@@ -40,6 +40,14 @@ class Snake:
         return False
     def change_direction(self, direction):
         #check if valid value
+        if self.direction == Direction.LEFT and direction == Direction.RIGHT:
+            return
+        if self.direction == Direction.RIGHT and direction == Direction.LEFT:
+            return
+        if self.direction == Direction.UP and direction == Direction.DOWN:
+            return
+        if self.direction == Direction.DOWN and direction == Direction.UP:
+            return
         self.direction = direction
     def add_tail(self):
         self.need_new_tail = True
