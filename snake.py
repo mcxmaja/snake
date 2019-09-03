@@ -187,16 +187,14 @@ class Game:
             return new_papu
         print('papu: ', self.papu)
     def if_edge_collision(self): #not sure about the name
-        snake_head_left_x, snake_head_top_y = self.snake.get_head_coords()
-        snake_head_right_x = snake_head_left_x + 1
-        snake_head_bottom_y = snake_head_top_y + 1
-        if snake_head_left_x < 0:
+        snake_head_x, snake_head_y = self.snake.get_head_coords()
+        if snake_head_x < 0:
             return True
-        if snake_head_right_x > self.board_size:
+        if snake_head_x + 1 > self.board_size:
             return True
-        if snake_head_top_y < 0:
+        if snake_head_y < 0:
             return True
-        if snake_head_bottom_y > self.board_size:
+        if snake_head_y + 1 > self.board_size:
             return True
         return False
 
