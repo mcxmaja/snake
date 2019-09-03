@@ -72,11 +72,14 @@ class Display:
         return [self.board_size, self.board_size]
     def get_center(self):
         return [self.board_size / 2, self.board_size / 2]
+
     def update_game(self, snake, papu_coords, game_over, pause, points):
         if game_over:
             text_surface = self.game_over_surface
+            text_x_positioning = (self.board_size / 2) - (self.font.size('GAME OVER')[0] / 2) + self.border_width
         elif pause:
             text_surface = self.pause_surface
+            text_x_positioning = (self.board_size / 2) - (self.font.size('PAUSE')[0] / 2) + self.border_width
         else:
             self.display.fill(self.border_color)
             pygame.draw.rect(self.display, self.background_color, self.move_to_inner_field([0,0]) + self.get_playfield_size())
@@ -85,9 +88,11 @@ class Display:
                 pygame.draw.rect(self.display, white, pixel)
             pygame.draw.rect(self.display, (0,0,255), self.move_to_inner_field(self.scale_with_pixel_size(papu_coords)) + [self.pixel_size, self.pixel_size])
             text_surface = self.font.render(str(points), False, white)
+            text_x_positioning = self.border_width
         self.clean_scoreboard()
-        self.display.blit(text_surface, (self.border_width, -40))
+        self.display.blit(text_surface, (text_x_positioning, -40))
         pygame.display.update()
+
     def display_menu(self, new_game_button_status, quit_button_status):
         print('display_menu')
         self.display.fill(black)
