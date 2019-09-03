@@ -139,6 +139,7 @@ class Game:
         pygame.time.delay(500)
         print('GAME OVER')   
         print('POINTS: ', self.point_count)
+        return self.point_count
     def apply_move_effcts(self):
         if self.if_edge_collision() or self.snake.if_self_collision():
             self.game_over = True
@@ -217,7 +218,8 @@ class Main:
             if keys[pygame.K_RETURN]:
                 if self.new_game_button:
                     game = Game(self.disp, board_size, pixel_size, time_delay)
-                    game.start()
+                    score = game.start()
+                    self.scoreboard.add_new_score(score)
                 else:
                     pygame.quit()
             if keys[pygame.K_DOWN] or keys[pygame.K_UP]:
@@ -232,14 +234,28 @@ class Main:
 
 class Scoreboard:
     def __init__(self, file):
-        self.scores_file = open(file, 'r')
-        self.scores = json.load(self.scores_file)
-        self.scores_file.close()
-        self.scores_file = open(file, 'w')
-        print(self.scores)
+        self.scores = [(0,'e')] * 5
+        #self.scores_file = open(file, 'r')
+        #self.scores = json.load(self.scores_file) #NOT JSON
+        #self.scores_file.close()
+        #self.scores_file = open(file, 'w')
+        #print(self.scores)
+        self.check_new_score(10)
+        self.check_new_score(100)
+        self.check_new_score(50)
+        self.check_new_score(1)
+        self.check_new_score(500)
     def write_scores_to_file(self):
-        json.dump(self.scores, self.scores_file)
-        self.scores_file.close()
+        pass
+        #json.dump(self.scores, self.scores_file) #NOT JSON
+        #self.scores_file.close()
+    def check_new_score(self, score):
+        if score > self.scores[-1][0]:
+            name = 'elo' #self.ask_for_name()
+            self.scores.append((score, name))
+            self.scores.sort(reverse = True, key = lambda tup : tup[0])
+            self.scores = self.scores[:5]
+        print(self.scores)
     
 
 #-------------------------------------------------------------------------------------
