@@ -204,6 +204,7 @@ class Main:
         self.quit_button = False
         self.new_game_button = True
         self.clock = pygame.time.Clock()
+        self.scoreboard = Scoreboard('.best_scores.json')
     def start(self):
         while(True):
             pygame.time.delay(100)
@@ -229,12 +230,23 @@ class Main:
             self.quit_button = True
             self.new_game_button = False
 
+class Scoreboard:
+    def __init__(self, file):
+        self.scores_file = open(file, 'r')
+        self.scores = json.load(self.scores_file)
+        self.scores_file.close()
+        self.scores_file = open(file, 'w')
+        print(self.scores)
+    def write_scores_to_file(self):
+        json.dump(self.scores, self.scores_file)
+        self.scores_file.close()
+    
 
 #-------------------------------------------------------------------------------------
 
 import pygame
 import random
-
+import json
 
 pygame.init()
 from pygame.locals import *
@@ -248,9 +260,6 @@ board_size = 50
 pixel_size = 10
 
 time_delay = 50
-
-#game = Game(board_size, pixel_size, time_delay)
-#game.start()
 
 Main(board_size, pixel_size, time_delay).start()
 
