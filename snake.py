@@ -72,7 +72,7 @@ class Display:
         return [self.board_size, self.board_size]
     def get_center(self):
         return [self.board_size / 2, self.board_size / 2]
-    def update(self, snake, papu_coords, game_over, pause, points):
+    def update_game(self, snake, papu_coords, game_over, pause, points):
         if game_over:
             text_surface = self.game_over_surface
         elif pause:
@@ -88,6 +88,24 @@ class Display:
         self.clean_scoreboard()
         self.display.blit(text_surface, (self.border_width, -40))
         pygame.display.update()
+    def display_menu(self, new_game_button_status, quit_button_status):
+        print('display_menu')
+        self.display.fill(black)
+
+        pygame.draw.rect(self.display, self.get_color_for_status(new_game_button_status), [50,100,400,100])
+        text_surface = self.font.render('NEW GAME', False, white)
+        self.display.blit(text_surface, (60, 70))
+
+        pygame.draw.rect(self.display, self.get_color_for_status(quit_button_status), [50,300,400,100])
+        text_surface = self.font.render('QUIT', False, white)
+        self.display.blit(text_surface, (60, 270))
+
+        pygame.display.update()
+    def get_color_for_status(self, bool):
+        if bool:
+            return (0, 255, 0)
+        else:
+            return (255, 0, 0)
     def scale_with_pixel_size(self, coords):
         return [coord * self.pixel_size for coord in coords]
     def move_x_to_inner_field(self, x_coord):
@@ -98,8 +116,8 @@ class Display:
         return [self.move_x_to_inner_field(coords[0]), self.move_y_to_inner_field(coords[1])]
     
 class Game:
-    def __init__(self, board_size, pixel_size, delay):
-        self.disp = Display(board_size, pixel_size, pixel_size, [black, red])
+    def __init__(self, display, board_size, pixel_size, delay):
+        self.disp = display
         self.snake = Snake([self.disp.get_center()[0] / pixel_size, self.disp.get_center()[1] / pixel_size], pixel_size)
         self.clock = pygame.time.Clock()
         self.delay = delay
@@ -117,7 +135,8 @@ class Game:
             if not self.pause:
                 self.snake.move()
                 self.apply_move_effcts()
-            self.disp.update(self.snake, self.papu, self.game_over, self.pause, self.point_count)
+            self.disp.update_game(self.snake, self.papu, self.game_over, self.pause, self.point_count)
+        pygame.time.delay(500)
         print('GAME OVER')   
         print('POINTS: ', self.point_count)
     def apply_move_effcts(self):
@@ -177,14 +196,41 @@ class Game:
             return True
         if snake_head_top_y < 0:
             return True
-        if snake_head_bottom_y > self.board_size:    
+        if snake_head_bottom_y > self.board_size:
             return True
         return False
 
+class Main:
+    def __init__(self, board_size, pixel_size, delay):
+        self.disp = Display(board_size, pixel_size, pixel_size, [black, red])
+        self.quit_button = False
+        self.new_game_button = True
+        self.clock = pygame.time.Clock()
+    def start(self):
+        while(True):
+            pygame.time.delay(100)
+            self.clock.tick()
+            self.disp.display_menu(self.new_game_button, self.quit_button)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_RETURN]:
+                if self.new_game_button:
+                    game = Game(self.disp, board_size, pixel_size, time_delay)
+                    game.start()
+                else:
+                    pygame.quit()
+            if keys[pygame.K_DOWN] or keys[pygame.K_UP]:
+                self.toggle_buttons()
+    def toggle_buttons(self):
+        if self.quit_button == True:
+            self.quit_button = False
+            self.new_game_button = True
+        else:
+            self.quit_button = True
+            self.new_game_button = False
 
-class Button:
-    def __init__(self):
-        pass
 
 #-------------------------------------------------------------------------------------
 
@@ -205,9 +251,9 @@ pixel_size = 10
 
 time_delay = 50
 
+#game = Game(board_size, pixel_size, time_delay)
+#game.start()
 
-game = Game(board_size, pixel_size, time_delay)
-
-game.start()
+Main(board_size, pixel_size, time_delay).start()
 
 pygame.time.delay(500)
