@@ -65,6 +65,7 @@ class Display:
         self.small_font = pygame.font.Font('./Pixeled.ttf', 30)
         self.game_over_surface = self.font.render('GAME OVER', False, white)
         self.pause_surface = self.font.render('PAUSE', False, white)
+        self.clock = pygame.time.Clock()
     def clean_scoreboard(self):
         pygame.draw.rect(self.display, self.border_color, [self.border_width, 0] + [self.board_size, self.scoreboard_height])
     def get_window_size(self):
@@ -115,15 +116,33 @@ class Display:
     def move_to_inner_field(self, coords):
         return [self.move_x_to_inner_field(coords[0]), self.move_y_to_inner_field(coords[1])]
     def enter_name_screen(self):
+        name = ''
+        i = 0
+        while True:
+            self.neme_screeen_display(name)
+            pygame.time.delay(100)
+            self.clock.tick()
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN: #TO DO: needs to handle closing window with x
+                    #print(event.unicode)
+                    if event.key == pygame.K_RETURN:
+                        return name
+                    elif event.key == pygame.K_BACKSPACE:
+                        name = name[:-1]
+                    else:
+                        char = event.unicode
+                        if char.isalnum() and self.font.size(name + char)[0] < 410:
+                            name += char
+                            i += 1
+    def neme_screeen_display(self, name):
         self.display.fill(black)
-        pygame.draw.rect(self.display, white, [50,200,400,100])
+        pygame.draw.rect(self.display, white, [50,200,410,100])
         title_text_surface = self.small_font.render('YOUR NAME:', False, white)
-        input_text_surface = self.font.render('_ _ _ _ _', False, red)
+        input_text_surface = self.font.render(name, False, red)
         self.display.blit(title_text_surface, (60, 100))
         self.display.blit(input_text_surface, (60, 170))
         pygame.display.update()
-        pygame.time.delay(3000)
-    
+
 class Game:
     def __init__(self, display, board_size, pixel_size, delay):
         self.disp = display
@@ -244,6 +263,7 @@ class Main:
             self.new_game_button = False
     def ask_for_name(self):
         name = self.disp.enter_name_screen()
+        print('name: ', name)
 
 class Scoreboard:
     def __init__(self, file):
