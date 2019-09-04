@@ -62,6 +62,7 @@ class Display:
         self.border_color = colors[1]
         self.display = pygame.display.set_mode(self.get_window_size())
         self.font = pygame.font.Font('./Pixeled.ttf', 50)
+        self.small_font = pygame.font.Font('./Pixeled.ttf', 30)
         self.game_over_surface = self.font.render('GAME OVER', False, white)
         self.pause_surface = self.font.render('PAUSE', False, white)
     def clean_scoreboard(self):
@@ -89,7 +90,6 @@ class Display:
         self.display.blit(text_surface, (self.border_width, -40))
         pygame.display.update()
     def display_menu(self, new_game_button_status, quit_button_status):
-        print('display_menu')
         self.display.fill(black)
 
         pygame.draw.rect(self.display, self.get_color_for_status(new_game_button_status), [50,100,400,100])
@@ -114,6 +114,15 @@ class Display:
         return y_coord + self.scoreboard_height
     def move_to_inner_field(self, coords):
         return [self.move_x_to_inner_field(coords[0]), self.move_y_to_inner_field(coords[1])]
+    def enter_name_screen(self):
+        self.display.fill(black)
+        pygame.draw.rect(self.display, white, [50,200,400,100])
+        title_text_surface = self.small_font.render('YOUR NAME:', False, white)
+        input_text_surface = self.font.render('_ _ _ _ _', False, red)
+        self.display.blit(title_text_surface, (60, 100))
+        self.display.blit(input_text_surface, (60, 170))
+        pygame.display.update()
+        pygame.time.delay(3000)
     
 class Game:
     def __init__(self, display, board_size, pixel_size, delay):
@@ -186,7 +195,6 @@ class Game:
             return self.new_papu(snake)
         else:
             return new_papu
-        print('papu: ', self.papu)
     def if_edge_collision(self): #not sure about the name
         snake_head_x, snake_head_y = self.snake.get_head_coords()
         if snake_head_x < 0:
@@ -219,7 +227,10 @@ class Main:
                 if self.new_game_button:
                     game = Game(self.disp, board_size, pixel_size, time_delay)
                     score = game.start()
-                    self.scoreboard.add_new_score(score)
+                    if self.scoreboard.is_scoreboard_score(score):
+                        print('GOOD SCORE!')
+                        name = self.ask_for_name()
+                        self.scoreboard.add_new_score(score, name)
                 else:
                     pygame.quit()
             if keys[pygame.K_DOWN] or keys[pygame.K_UP]:
@@ -231,6 +242,8 @@ class Main:
         else:
             self.quit_button = True
             self.new_game_button = False
+    def ask_for_name(self):
+        name = self.disp.enter_name_screen()
 
 class Scoreboard:
     def __init__(self, file):
@@ -239,23 +252,20 @@ class Scoreboard:
         #self.scores = json.load(self.scores_file) #NOT JSON
         #self.scores_file.close()
         #self.scores_file = open(file, 'w')
-        #print(self.scores)
-        self.check_new_score(10)
-        self.check_new_score(100)
-        self.check_new_score(50)
-        self.check_new_score(1)
-        self.check_new_score(500)
     def write_scores_to_file(self):
         pass
         #json.dump(self.scores, self.scores_file) #NOT JSON
         #self.scores_file.close()
-    def check_new_score(self, score):
+    def is_scoreboard_score(self, score):
         if score > self.scores[-1][0]:
-            name = 'elo' #self.ask_for_name()
-            self.scores.append((score, name))
-            self.scores.sort(reverse = True, key = lambda tup : tup[0])
-            self.scores = self.scores[:5]
-        print(self.scores)
+            return True
+        return False
+    def add_new_score(self, score, name):
+        self.scores.append((score, name))
+        self.scores.sort(reverse = True, key = lambda tup : tup[0])
+        self.scores = self.scores[:5]
+        self.write_scores_to_file()
+        
     
 
 #-------------------------------------------------------------------------------------
